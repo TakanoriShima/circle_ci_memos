@@ -109,3 +109,44 @@ git push origin main
 ```
 
 CircleCIで自動テストと自動デプロイ完了
+
+## 7. カレンダー表示の修正
+app/Http/Controllers/RecordsController.php の get_calendarアクションを変更
+
+```
+    // 自分の記録のカレンダー情報の取得
+    public function get_calendar()
+    {
+        // ログインしているユーザーの顧客全記録を取得
+        // $records = DB::select('SELECT records.id, customers.name, records.customer_id, records.title, records.start, records.end, records.color, records.created_at, records.updated_at  FROM records JOIN customers ON records.customer_id=customers.id JOIN users ON customers.user_id=users.id WHERE users.id=? AND customers.delete_flag=0', [\Auth::id()]);
+        
+        $records = DB::table('records')
+        ->join('customers', 'records.customer_id', '=', 'customers.id')
+        ->join('users', 'customers.user_id', '=', 'users.id')
+        ->where('customers.delete_flag', '=', 0)
+        ->where('users.id', '=', \Auth::id())
+        ->select('records.id', 'records.title', 'customers.name', 'records.start', 'records.end', 'records.color')
+        ->get();
+        
+        foreach($records as $record){
+            $record->title = '【' . $record->name . 'さん】:  ' . $record->title;
+        }
+        // var_dump($records);
+        $list = array('records' => $records);
+        
+        // 明示的に指定しない場合は、text/html型と判断される
+        header("Content-type: application/json; charset=UTF-8");
+        //JSONデータを出力
+        echo json_encode($list);
+        exit;
+    }
+```
+
+## 8. Git/Github
+```
+git add .
+git commit -m "カレンダー表示修正"
+git push origin main
+```
+
+CircleCIで自動テストと自動デプロイ完了
